@@ -176,4 +176,4 @@ const crawler = async () => {
 crawler();
 setInterval(() => {
   crawler();
-}, 600000);
+}, 1000000);
