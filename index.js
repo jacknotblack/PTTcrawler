@@ -114,7 +114,7 @@ const crawler = async () => {
     nowPage = pageInfo.pageNumber; //Now page;
     let articleInfo = [];
 
-    for (let i = pageInfo.links.length - 1; i >= 0; i--) {
+    for (let i = 0; i < pageInfo.links.length; i++) {
       let article = await page.goto(pageInfo.links[i].link, {
         waitUntil: "domcontentloaded",
         timeout: 0
