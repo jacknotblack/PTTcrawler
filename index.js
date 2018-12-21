@@ -95,7 +95,7 @@ const crawler = async () => {
   let stop = false;
 
   const latestPost = (await Post.max("postAt")) || 0;
-  console.log(`latestPost: ${new Date(latestPost)}`);
+  console.log(`latestPost: ${new Date(latestPost)}--${latestPost}`);
   while (!stop) {
     let p = await page.goto(
       `https://www.ptt.cc/bbs/${board}/index${nowPage}.html`,
@@ -114,7 +114,7 @@ const crawler = async () => {
     nowPage = pageInfo.pageNumber; //Now page;
     let articleInfo = [];
 
-    for (let i = 0; i < pageInfo.links.length; i++) {
+    for (let i = pageInfo.links.length - 1; i >= 0; i--) {
       let article = await page.goto(pageInfo.links[i].link, {
         waitUntil: "domcontentloaded",
         timeout: 0
@@ -124,7 +124,18 @@ const crawler = async () => {
         continue;
       }
       const parsedArticle = await page.evaluate(articleParser);
-      if (new Date(parsedArticle.postInfo.time).getTime() < latestPost) {
+
+      if (
+        parsedArticle.postInfo.title.includes("宣導") ||
+        parsedArticle.postInfo.title.includes("公告") ||
+        parsedArticle.postInfo.time === undefined
+      ) {
+        console.log("宣導公告or no time");
+        continue;
+      }
+      const postTime = new Date(parsedArticle.postInfo.time);
+      console.log(`postTime: ${postTime}--${postTime.getTime()}`);
+      if (postTime.getTime() <= latestPost) {
         stop = true;
         break;
       }
