@@ -39,7 +39,24 @@ const Post = sequelize.define(
     link: Sequelize.STRING(100),
     createdAt: Sequelize.BIGINT,
     updatedAt: Sequelize.BIGINT,
-    version: Sequelize.BIGINT
+    version: Sequelize.BIGINT,
+    gameID: Sequelize.INTEGER
+  },
+  {
+    timestamps: false
+  }
+);
+
+const Game = sequelize.define(
+  "game_name_alias",
+  {
+    id: {
+      type: Sequelize.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    name: Sequelize.STRING(30),
+    gameID: Sequelize.INTEGER
   },
   {
     timestamps: false
@@ -70,10 +87,21 @@ sequelize
 // });
 
 const board = "Gamesale";
-let nowPage = 0;
+
+const findGameID = (games, name) => {
+  for (index in games) {
+    if (name.toLowerCase().includes(games[index].name.toLowerCase())) {
+      return games[index].gameID;
+    }
+  }
+  console.log(`no name found: ${name}`);
+  return null;
+};
 
 const crawler = async () => {
+  let nowPage = 0;
   console.log("----------STARTING----------");
+  const games = await Game.findAll().map(data => data.dataValues);
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox"]
@@ -98,6 +126,7 @@ const crawler = async () => {
   const latestPost = (await Post.max("postAt")) || 0;
   console.log(`latestPost: ${new Date(latestPost)}--${latestPost}`);
   while (!stop) {
+    console.log(`nowPage: ${nowPage}`);
     let p = await page.goto(
       `https://www.ptt.cc/bbs/${board}/index${nowPage}.html`,
       {
@@ -129,38 +158,48 @@ const crawler = async () => {
       if (
         parsedArticle.postInfo.title.includes("宣導") ||
         parsedArticle.postInfo.title.includes("公告") ||
-        parsedArticle.postInfo.time === undefined
+        parsedArticle.postInfo.time === undefined ||
+        parsedArticle.contentInfo.price === null
       ) {
-        console.log("宣導公告or no time");
+        console.log("宣導公告 / no time / no price ");
         continue;
       }
-      const postTime = new Date(parsedArticle.postInfo.time);
+      const postTime = new Date(`${parsedArticle.postInfo.time} GMT+08:00`);
       console.log(`postTime: ${postTime}--${postTime.getTime()}`);
       if (postTime.getTime() <= latestPost) {
         stop = true;
         break;
       }
+      const price = (parsedArticle.contentInfo.price = parseInt(
+        parsedArticle.contentInfo.price
+      ));
       if (
         parsedArticle.postInfo.title.includes("NS") &&
-        parsedArticle.postInfo.title.includes("售") &&
-        parsedArticle.contentInfo.price !== null
+        !parsedArticle.postInfo.title.includes("徵") &&
+        !parsedArticle.postInfo.title.includes("收") &&
+        parsedArticle.postInfo.link !== "" &&
+        price < 6000 &&
+        price > 400
       ) {
+        parsedArticle.gameName = parsedArticle.contentInfo.text
+          .slice(parsedArticle.contentInfo.text.indexOf("物品名稱】：") + 6)
+          .slice(
+            0,
+            parsedArticle.contentInfo.text
+              .slice(parsedArticle.contentInfo.text.indexOf("物品名稱】：") + 6)
+              .indexOf("\n")
+          );
+        parsedArticle.gameID = findGameID(games, parsedArticle.gameName);
         articleInfo.push(parsedArticle);
       }
     }
     const mappedarticleInfo = articleInfo.map(article => ({
       title: article.postInfo.title,
-      gameName: article.contentInfo.text
-        .slice(article.contentInfo.text.indexOf("物品名稱】：") + 6)
-        .slice(
-          0,
-          article.contentInfo.text
-            .slice(article.contentInfo.text.indexOf("物品名稱】：") + 6)
-            .indexOf("\n")
-        ),
-      price: parseInt(article.contentInfo.price),
+      gameName: article.gameName,
+      price: article.contentInfo.price,
       postAt: new Date(article.postInfo.time).getTime(),
-      link: article.postInfo.link
+      link: article.postInfo.link,
+      gameID: article.gameID
     }));
 
     Post.bulkCreate(mappedarticleInfo, { validate: true });
@@ -176,7 +215,7 @@ const crawler = async () => {
     // );
     // console.log(`Saved as data/${board}/${board}_${nowPage}.json`);
     nowPage -= 1;
-    if (nowPage === 4000) {
+    if (nowPage === 3000) {
       break;
     }
   }
@@ -188,4 +227,4 @@ const crawler = async () => {
 crawler();
 setInterval(() => {
   crawler();
-}, 60000);
+}, 300000);
