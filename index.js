@@ -1,4 +1,3 @@
-// const fs = require("fs");
 const puppeteer = require("puppeteer");
 const pageParser = require("./lib/pageParser");
 const articleParser = require("./lib/articleParser");
@@ -48,6 +47,22 @@ const Post = sequelize.define(
 );
 
 const Game = sequelize.define(
+  "game",
+  {
+    id: {
+      type: Sequelize.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    name: Sequelize.STRING(30),
+    lowest_price: Sequelize.INTEGER(5)
+  },
+  {
+    timestamps: false
+  }
+);
+
+const GameName = sequelize.define(
   "game_name_alias",
   {
     id: {
@@ -62,12 +77,6 @@ const Game = sequelize.define(
     timestamps: false
   }
 );
-
-// Post.sync({ force: true }).then(() => {
-//   // Table created
-//   console.log(1);
-//   return false;
-// });
 
 sequelize
   .authenticate()
@@ -101,7 +110,7 @@ const findGameID = (games, name) => {
 const crawler = async () => {
   let nowPage = 0;
   console.log("----------STARTING----------");
-  const games = await Game.findAll().map(data => data.dataValues);
+  const games = await GameName.findAll().map(data => data.dataValues);
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox"]
@@ -193,7 +202,7 @@ const crawler = async () => {
         articleInfo.push(parsedArticle);
       }
     }
-    const mappedarticleInfo = articleInfo.map(article => ({
+    const mappedArticleInfo = articleInfo.map(article => ({
       title: article.postInfo.title,
       gameName: article.gameName,
       price: article.contentInfo.price,
@@ -202,18 +211,17 @@ const crawler = async () => {
       gameID: article.gameID
     }));
 
-    Post.bulkCreate(mappedarticleInfo, { validate: true });
+    Post.bulkCreate(mappedArticleInfo, { validate: true });
+    mappedArticleInfo.forEach(async article => {
+      let game = await Game.findByPk(article.gameID);
+      let lowestPrice = await game.dataValues.lowest_price;
+      if (lowestPrice === null || lowestPrice > article.price) {
+        console.log("LOWEST!");
+        game.set("lowest_price", article.price);
+        game.save();
+      }
+    });
 
-    // if (!fs.existsSync("./data")) fs.mkdirSync("./data");
-    //write data to json
-    // if (!fs.existsSync(`./data/${board}`)) fs.mkdirSync(`./data/${board}`);
-
-    // fs.writeFileSync(
-    //   `./data/${board}/${board}_${nowPage}.json`,
-    //   JSON.stringify(articleInfo),
-    //   { flag: "w" }
-    // );
-    // console.log(`Saved as data/${board}/${board}_${nowPage}.json`);
     nowPage -= 1;
     if (nowPage === 3000) {
       break;
