@@ -55,7 +55,8 @@ const Game = sequelize.define(
       autoIncrement: true
     },
     name: Sequelize.STRING(30),
-    lowest_price: Sequelize.INTEGER(5)
+    lowest_price: Sequelize.INTEGER(5),
+    lp_link: Sequelize.STRING(100)
   },
   {
     timestamps: false
@@ -216,8 +217,7 @@ const crawler = async () => {
       let game = await Game.findByPk(article.gameID);
       let lowestPrice = await game.dataValues.lowest_price;
       if (lowestPrice === null || lowestPrice > article.price) {
-        console.log("LOWEST!");
-        game.set("lowest_price", article.price);
+        game.set({ lowest_price: article.price, lp_link: article.link });
         game.save();
       }
     });
