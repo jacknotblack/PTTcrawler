@@ -73,6 +73,7 @@ const board = "Gamesale";
 let nowPage = 0;
 
 const crawler = async () => {
+  console.log("----------STARTING----------");
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox"]
@@ -180,11 +181,11 @@ const crawler = async () => {
     }
   }
   await browser.close();
-  console.log("---complete---");
+  console.log("----------complete----------");
   return false;
   // }
 };
 crawler();
 setInterval(() => {
   crawler();
-}, 1000000);
+}, 60000);
