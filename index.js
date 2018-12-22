@@ -133,7 +133,7 @@ const crawler = async () => {
   let pageInfo;
   let stop = false;
 
-  const latestPost = (await Post.max("postAt")) || 0;
+  const latestPost = (await Post.max("postAt")) - 28800000 || 0;
   console.log(`latestPost: ${new Date(latestPost)}--${latestPost}`);
   while (!stop) {
     console.log(`nowPage: ${nowPage}`);
