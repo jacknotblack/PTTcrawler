@@ -218,8 +218,9 @@ const crawler = async () => {
       let lowestPrice = await game.dataValues.lowest_price;
       if (lowestPrice === null || lowestPrice > article.price) {
         game.set({ lowest_price: article.price, lp_link: article.link });
-        game.save();
       }
+      game.set({ post_count: game.dataValues.post_count + 1 });
+      game.save();
     });
 
     nowPage -= 1;
