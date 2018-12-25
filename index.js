@@ -100,9 +100,15 @@ sequelize
 const board = "Gamesale";
 
 const findGameID = (games, name) => {
+  if (
+    name.includes("特典") &&
+    !name.includes("含") &&
+    !name.includes("無特典") &&
+    !name.includes("付特典")
+  )
+    return null;
   for (index in games) {
     if (name.toLowerCase().includes(games[index].name.toLowerCase())) {
-      if (name.includes("特典") && !name.includes("含")) continue;
       return games[index].gameID;
     }
   }
