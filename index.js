@@ -102,6 +102,7 @@ const board = "Gamesale";
 const findGameID = (games, name) => {
   for (index in games) {
     if (name.toLowerCase().includes(games[index].name.toLowerCase())) {
+      if (name.includes("特典") && !name.includes("含")) continue;
       return games[index].gameID;
     }
   }
@@ -113,6 +114,7 @@ const crawler = async () => {
   let nowPage = 0;
   console.log("----------STARTING----------");
   const games = await GameName.findAll().map(data => data.dataValues);
+  console.log(games);
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox"]
