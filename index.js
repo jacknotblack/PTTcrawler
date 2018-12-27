@@ -36,13 +36,10 @@ const Post = sequelize.define(
     price: Sequelize.BIGINT,
     postAt: Sequelize.BIGINT,
     link: Sequelize.STRING(100),
-    createdAt: Sequelize.BIGINT,
-    updatedAt: Sequelize.BIGINT,
-    version: Sequelize.BIGINT,
     gameID: Sequelize.INTEGER
   },
   {
-    timestamps: false
+    timestamps: true
   }
 );
 
@@ -60,7 +57,9 @@ const Game = sequelize.define(
     post_count: Sequelize.INTEGER(3)
   },
   {
-    timestamps: false
+    timestamps: true,
+    createdAt: false, 
+    updatedAt: 'updateTimestamp',
   }
 );
 
