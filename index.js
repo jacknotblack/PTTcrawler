@@ -59,7 +59,7 @@ const Game = sequelize.define(
   {
     timestamps: true,
     createdAt: false, 
-    updatedAt: 'updateTimestamp',
+    updatedAt: 'updatedAt',
   }
 );
 
